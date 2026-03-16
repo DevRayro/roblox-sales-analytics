@@ -185,7 +185,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] bg-base text-slate-300 font-sans selection:bg-primary-500/30 selection:text-primary-200 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-base text-slate-300 font-sans selection:bg-primary-500/30 selection:text-primary-200 overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 bg-panel border-r border-subtle flex-col justify-between flex-shrink-0 z-20 shadow-xl">
         <div>
@@ -283,10 +283,10 @@ export default function App() {
             </button>
 
             <h2 className="text-lg md:text-2xl font-bold text-white tracking-tight truncate">
-              {data ? (view === 'dashboard' ? 'Overview' : view === 'settings' ? 'Settings' : 'Transactions') : 'Connect'}
+              {data ? (view === 'dashboard' ? 'Overview' : view === 'settings' ? 'Settings' : 'Transactions') : 'Connect Source'}
             </h2>
             {credentials && (
-              <div className="hidden lg:flex items-center px-3 py-1.5 bg-panel border border-subtle rounded-lg shadow-sm">
+              <div className="hidden md:flex items-center px-3 py-1.5 bg-panel border border-subtle rounded-lg shadow-sm">
                 {credentials.iconUrl ? (
                   <img src={credentials.iconUrl} alt="Group Icon" className="w-6 h-6 rounded mr-2 border border-subtle object-cover" />
                 ) : (
@@ -307,7 +307,7 @@ export default function App() {
               className="flex items-center space-x-2 bg-[#131B2C] hover:bg-[#1E293B] text-slate-300 px-3 md:px-4 py-2 rounded-xl transition-all border border-[#1E293B] hover:border-slate-600 shadow-sm disabled:opacity-50 flex-shrink-0"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-primary-400' : ''}`} />
-              <span className="hidden sm:inline">{isRefreshing ? 'Syncing...' : 'Sync Now'}</span>
+              <span className="hidden md:inline">{isRefreshing ? 'Syncing...' : 'Sync Now'}</span>
             </button>
           )}
         </header>
@@ -397,7 +397,7 @@ export default function App() {
                       }`}
                     >
                       <Key className="w-4 h-4 md:w-5 md:h-5" />
-                      <span>Live</span>
+                      <span className="hidden md:inline">Live Connection</span><span className="md:hidden">Live</span>
                     </button>
                   </div>
                 </div>

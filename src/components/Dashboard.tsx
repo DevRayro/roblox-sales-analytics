@@ -157,20 +157,20 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="bg-gradient-to-br from-[var(--bg-panel)] to-[var(--bg-base)] p-3 md:p-6 rounded-2xl md:rounded-3xl shadow-xl border border-[var(--border-subtle)] relative overflow-hidden group hover:border-primary-500/30 transition-colors"
+      className="bg-gradient-to-br from-[var(--bg-panel)] to-[var(--bg-base)] p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-xl border border-[var(--border-subtle)] relative overflow-hidden group hover:border-primary-500/30 transition-colors"
     >
       <div className="absolute -top-6 -right-6 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
-        <Icon className="w-24 md:w-32 h-24 md:h-32 text-primary-500 transform rotate-12" />
+        <Icon className="w-32 h-32 text-primary-500 transform rotate-12" />
       </div>
       <div className="relative z-10">
-        <div className="flex items-center justify-between mb-2 md:mb-4">
+        <div className="flex items-center justify-between mb-3 md:mb-4">
           <p className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-widest">{title}</p>
-          <div className="p-1.5 md:p-2.5 bg-primary-500/10 text-primary-400 rounded-xl md:rounded-2xl border border-primary-500/20 shadow-inner">
-            <Icon className="w-3.5 h-3.5 md:w-5 md:h-5" />
+          <div className="p-2 md:p-2.5 bg-primary-500/10 text-primary-400 rounded-xl md:rounded-2xl border border-primary-500/20 shadow-inner">
+            <Icon className="w-4 h-4 md:w-5 md:h-5" />
           </div>
         </div>
         <div>
-          <h4 className="text-xl md:text-4xl font-black text-white tracking-tight">{prefix}{value}</h4>
+          <h4 className="text-2xl md:text-4xl font-black text-white tracking-tight">{prefix}{value}</h4>
         </div>
       </div>
     </motion.div>
@@ -179,8 +179,8 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
   return (
     <div className="space-y-8">
       {/* Header Controls */}
-      <div className="flex flex-col gap-3 md:gap-4 bg-[var(--bg-panel)]/50 p-2 rounded-2xl md:rounded-3xl border border-[var(--border-subtle)] backdrop-blur-sm">
-        <div className="flex items-center p-1 bg-base rounded-xl md:rounded-2xl w-full overflow-x-auto scrollbar-none">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-[var(--bg-panel)]/50 p-2 rounded-2xl md:rounded-3xl border border-[var(--border-subtle)] backdrop-blur-sm">
+        <div className="flex items-center p-1 bg-base rounded-xl md:rounded-2xl w-full sm:w-auto overflow-x-auto scrollbar-none">
           {[
             { id: 'overview', label: 'Overview', icon: LayoutDashboard },
             ...(!isLive ? [{ id: 'location', label: 'By Location', icon: MapPin }] : []),
@@ -192,7 +192,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={cn(
-                  "flex items-center space-x-1.5 md:space-x-2 px-3 md:px-6 py-2.5 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
+                  "flex items-center space-x-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap",
                   activeTab === tab.id
                     ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25"
                     : "text-slate-400 hover:text-slate-200 hover:bg-subtle"
@@ -205,13 +205,13 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
           })}
         </div>
 
-        <div className="flex items-center p-1 bg-base rounded-xl md:rounded-2xl w-full">
+        <div className="flex items-center p-1 bg-base rounded-xl md:rounded-2xl w-full sm:w-auto">
           {(['7d', '30d', '6m', '1y', 'all'] as const).map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
               className={cn(
-                "flex-1 px-2 md:px-4 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all",
+                "px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
                 timeRange === range
                   ? "bg-subtle text-primary-400 shadow-inner"
                   : "text-slate-500 hover:text-slate-300 hover:bg-panel"
@@ -224,7 +224,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         <StatCard title="Total Revenue" value={stats.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} icon={DollarSign} prefix="R$ " delay={0.1} />
         <StatCard title="Total Sales" value={stats.totalSales.toLocaleString()} icon={ShoppingCart} delay={0.2} />
         <StatCard title="Unique Buyers" value={stats.uniqueBuyers.toLocaleString()} icon={Users} delay={0.3} />
@@ -349,7 +349,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                 <div className="h-[240px] md:h-[280px] w-full">
                   {topItems.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={topItems} layout="vertical" margin={{ top: 5, right: 10, left: 80, bottom: 5 }}>
+                      <BarChart data={topItems} layout="vertical" margin={{ top: 5, right: 30, left: 140, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border-subtle)" />
                         <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(val) => `R$${val}`} />
                         <YAxis 

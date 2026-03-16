@@ -121,14 +121,14 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-lg md:text-2xl font-bold text-white">All Sales</h2>
-        <span className="px-2 md:px-3 py-1 bg-[var(--border-subtle)] text-slate-300 rounded-full text-xs md:text-sm font-medium">
+        <h2 className="text-2xl font-bold text-white">All Sales</h2>
+        <span className="px-3 py-1 bg-[var(--border-subtle)] text-slate-300 rounded-full text-sm font-medium">
           {filteredAndSortedData.length} records
         </span>
       </div>
 
-      <div className="bg-[var(--bg-panel)] p-3 md:p-6 rounded-xl shadow-sm border border-[var(--border-subtle)] space-y-3 md:space-y-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
+      <div className="bg-[var(--bg-panel)] p-4 md:p-6 rounded-xl shadow-sm border border-[var(--border-subtle)] space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
