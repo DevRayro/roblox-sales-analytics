@@ -109,6 +109,11 @@ body {
   overscroll-behavior: none;
 }
 
+/* Safe area for devices with notch/status bar */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 /* Safe area for devices with home indicator (iPhone X+) */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
