@@ -12,7 +12,7 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [fetchProgress, setFetchProgress] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  
+
   const [profiles, setProfiles] = useState<SavedProfile[]>([]);
   const [isFetchingGroupInfo, setIsFetchingGroupInfo] = useState(false);
   const [pendingProfile, setPendingProfile] = useState<{ name: string, iconUrl: string | null } | null>(null);
@@ -38,18 +38,18 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
 
   const initiateSaveProfile = async () => {
     if (!groupId || !cookie) return;
-    
+
     setIsFetchingGroupInfo(true);
     setError(null);
-    
+
     try {
       const res = await fetch(`/api/roblox/group-info/${groupId}`);
       const data = await res.json();
-      
+
       if (!res.ok) {
         throw new Error(data.error || 'Failed to fetch group info');
       }
-      
+
       setPendingProfile({
         name: data.name || `Group ${groupId}`,
         iconUrl: data.iconUrl
@@ -63,7 +63,7 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
 
   const confirmSaveProfile = () => {
     if (!pendingProfile || !groupId || !cookie) return;
-    
+
     const newProfile: SavedProfile = {
       id: Date.now().toString(),
       name: pendingProfile.name,
@@ -71,7 +71,7 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
       cookie,
       iconUrl: pendingProfile.iconUrl || undefined
     };
-    
+
     saveProfilesToStorage([...profiles, newProfile]);
     setPendingProfile(null);
   };
@@ -228,6 +228,24 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
     setFetchProgress('Initializing connection...');
 
     try {
+      // Validate the cookie up front so an invalid cookie gives a clear message
+      // instead of surfacing as a generic fetch failure mid-way.
+      setFetchProgress('Validating cookie...');
+      try {
+        const authRes = await fetch('/api/roblox/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cookie })
+        });
+        if (authRes.status === 401) {
+          throw new Error('Invalid .ROBLOSECURITY cookie. Please check it and try again.');
+        }
+        // Other auth errors (network/server) shouldn't block — the fetch loop has its own retries.
+      } catch (authErr: any) {
+        if (authErr?.message?.includes('Invalid .ROBLOSECURITY')) throw authErr;
+        // Ignore non-auth failures here; proceed to the resilient fetch loop.
+      }
+
       // Check for cached data first
       const cached = getCachedData(groupId);
       const cachedData = cached?.data || null;
@@ -273,6 +291,12 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
         parsedData = cachedData;
         isComplete = true;
         setFetchProgress('No new transactions. Using cached data.');
+      } else if (cachedData && cachedData.length > 0) {
+        // Re-fetch returned nothing (e.g. it broke early on errors).
+        // Don't wipe the user's previously cached data — fall back to it.
+        parsedData = cachedData;
+        isComplete = false;
+        setFetchProgress('Could not fetch new data. Using cached data.');
       } else {
         parsedData = [];
         isComplete = reachedEnd;
@@ -312,7 +336,7 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg-base)]/80 backdrop-blur-sm p-4">
           <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95">
             <h3 className="text-xl font-semibold text-white mb-4 text-center">Save Profile</h3>
-            
+
             <div className="flex flex-col items-center justify-center mb-6 p-4 bg-[var(--bg-base)] rounded-xl border border-[var(--border-subtle)]">
               {pendingProfile.iconUrl ? (
                 <img src={pendingProfile.iconUrl} alt={pendingProfile.name} className="w-20 h-20 rounded-xl mb-3 shadow-sm" />
@@ -324,9 +348,9 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
               <p className="text-white font-medium text-center">{pendingProfile.name}</p>
               <p className="text-slate-400 text-sm mt-1">ID: {groupId}</p>
             </div>
-            
+
             <p className="text-slate-400 text-center mb-6">Are you sure you want to save this group profile?</p>
-            
+
             <div className="flex space-x-3">
               <button
                 onClick={() => setPendingProfile(null)}
@@ -354,7 +378,7 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
             <Bookmark className="w-4 h-4 mr-2 text-primary-500" />
             Saved Profiles
           </h3>
-          
+
           {profiles.length === 0 ? (
             <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl p-6 text-center text-slate-400 text-sm shadow-sm">
               No saved profiles yet. Connect a group and save it to quickly access it later.
@@ -362,7 +386,7 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
           ) : (
             <div className="space-y-3">
               {profiles.map(profile => (
-                <div 
+                <div
                   key={profile.id}
                   className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl p-3 flex items-center justify-between group hover:border-primary-500/50 hover:shadow-md transition-all cursor-pointer"
                   onClick={() => handleSelectProfile(profile)}
@@ -380,7 +404,7 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
                       <p className="text-xs text-slate-500 truncate font-mono">ID: {profile.groupId}</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteProfile(profile.id);
@@ -429,7 +453,7 @@ export function CookieConnect({ onDataFetched }: CookieConnectProps) {
                 placeholder="e.g. 1234567"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">.ROBLOSECURITY Cookie</label>
               <input

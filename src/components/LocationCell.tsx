@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { SaleRecord } from '../types';
 import { HelpCircle, ExternalLink } from 'lucide-react';
+import { gameIconBatcher, placeIconBatcher, gameNameBatcher } from '../utils/apiBatcher';
 
 interface LocationCellProps {
   record: SaleRecord;
@@ -17,39 +18,35 @@ export function LocationCell({ record }: LocationCellProps) {
   const isGame = record.location === 'Game';
   const hasUniverse = record.universeId && record.universeId !== 'Null' && record.universeId !== '';
   const hasLocation = record.locationId && record.locationId !== 'Null' && record.locationId !== '';
-  
+
   const canFetchIcon = isGame && (hasUniverse || hasLocation);
 
   useEffect(() => {
     if (!canFetchIcon) return;
-    
-    const idToUse = hasUniverse ? record.universeId : record.locationId;
-    const endpoint = hasUniverse 
-      ? `/api/roblox/thumbnails/games?universeIds=${idToUse}`
-      : `/api/roblox/thumbnails/places?placeIds=${idToUse}`;
 
-    fetch(endpoint)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.data && data.data.length > 0) {
-          const url = data.data[0].imageUrl;
-          setIconUrl(url);
-        }
+    let isMounted = true;
+
+    const idToUse = hasUniverse ? record.universeId : record.locationId;
+    const iconBatcher = hasUniverse ? gameIconBatcher : placeIconBatcher;
+
+    iconBatcher.fetch(idToUse)
+      .then(url => {
+        if (isMounted && url) setIconUrl(url);
       })
       .catch(err => console.error('Failed to fetch game icon', err));
 
     // If we don't have the universe name, try to fetch it if we have the universeId
     if ((!record.universe || record.universe === 'Unknown' || record.universe === 'Null') && hasUniverse) {
-      fetch(`/api/roblox/games?universeIds=${record.universeId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.data && data.data.length > 0) {
-            const name = data.data[0].name;
-            setGameName(name);
-          }
+      gameNameBatcher.fetch(record.universeId)
+        .then(name => {
+          if (isMounted && name) setGameName(name);
         })
         .catch(err => console.error('Failed to fetch game name', err));
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [canFetchIcon, hasUniverse, record.universeId, record.locationId, record.universe]);
 
   const handleMouseEnter = () => {
@@ -63,21 +60,21 @@ export function LocationCell({ record }: LocationCellProps) {
     setIsHovering(true);
   };
 
-  const linkUrl = hasUniverse 
+  const linkUrl = hasUniverse
     ? `https://www.roblox.com/games/${record.universeId}`
-    : hasLocation 
+    : hasLocation
       ? `https://www.roblox.com/games/${record.locationId}`
       : null;
 
   const displayGameName = gameName || (record.universe && record.universe !== 'Null' && record.universe !== 'Unknown' ? record.universe : 'Game');
 
   const badge = (
-    <span 
+    <span
       className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 w-fit transition-all ${
-        isGame 
-          ? `bg-primary-500/10 text-primary-400 border border-primary-500/20 ${linkUrl ? 'cursor-pointer hover:bg-primary-500/20 hover:border-primary-500/30 hover:shadow-sm' : 'cursor-default'}` 
-          : record.location === 'Website' 
-            ? 'bg-[var(--border-subtle)] text-slate-300 border border-[var(--border-subtle)] cursor-default' 
+        isGame
+          ? `bg-primary-500/10 text-primary-400 border border-primary-500/20 ${linkUrl ? 'cursor-pointer hover:bg-primary-500/20 hover:border-primary-500/30 hover:shadow-sm' : 'cursor-default'}`
+          : record.location === 'Website'
+            ? 'bg-[var(--border-subtle)] text-slate-300 border border-[var(--border-subtle)] cursor-default'
             : 'bg-[var(--bg-base)] text-slate-400 border border-[var(--border-subtle)] cursor-default'
       }`}
     >
@@ -91,7 +88,7 @@ export function LocationCell({ record }: LocationCellProps) {
   }
 
   const tooltip = isHovering ? createPortal(
-    <div 
+    <div
       className="fixed z-[100] w-64 bg-[var(--bg-panel)] rounded-xl shadow-xl border border-[var(--border-subtle)] p-4 animate-in fade-in zoom-in-95 duration-200"
       style={{
         top: `${tooltipPos.top}px`,
@@ -102,22 +99,22 @@ export function LocationCell({ record }: LocationCellProps) {
       onMouseLeave={() => setIsHovering(false)}
     >
       {/* Tooltip Arrow pointing left */}
-      <div 
+      <div
         className="absolute top-1/2 -left-2 -translate-y-1/2 w-4 h-4 bg-[var(--bg-panel)] border-l border-b border-[var(--border-subtle)] transform rotate-45"
       ></div>
-      
+
       <div className="relative z-10">
         {linkUrl ? (
-          <a 
+          <a
             href={linkUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex flex-col items-center text-center group"
           >
             {iconUrl ? (
-              <img 
-                src={iconUrl} 
-                alt={displayGameName} 
+              <img
+                src={iconUrl}
+                alt={displayGameName}
                 className="w-24 h-24 rounded-xl mb-4 shadow-sm border border-[var(--border-subtle)] group-hover:shadow-md group-hover:scale-105 transition-all duration-300 object-cover"
                 referrerPolicy="no-referrer"
               />
@@ -148,7 +145,7 @@ export function LocationCell({ record }: LocationCellProps) {
   ) : null;
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative inline-block"
       onMouseEnter={handleMouseEnter}

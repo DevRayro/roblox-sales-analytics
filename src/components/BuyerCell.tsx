@@ -9,10 +9,10 @@ interface BuyerCellProps {
 export function BuyerCell({ record }: BuyerCellProps) {
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
   const [fetchedName, setFetchedName] = useState<string | null>(null);
-  
+
   useEffect(() => {
     if (!record.buyerUserId || record.buyerUserId === 'Unknown') return;
-    
+
     let isMounted = true;
 
     userHeadshotBatcher.fetch(record.buyerUserId)
@@ -32,25 +32,25 @@ export function BuyerCell({ record }: BuyerCellProps) {
     };
   }, [record.buyerUserId]);
 
-  const displayName = fetchedName || (record.buyerName && record.buyerName !== 'Unknown' 
-    ? record.buyerName 
+  const displayName = fetchedName || (record.buyerName && record.buyerName !== 'Unknown'
+    ? record.buyerName
     : `User ${record.buyerUserId}`);
 
-  if (record.buyerUserId === 'Unknown') {
+  if (!record.buyerUserId || record.buyerUserId === 'Unknown') {
     return <span className="text-slate-500">Unknown</span>;
   }
 
   return (
-    <a 
+    <a
       href={`https://www.roblox.com/users/${record.buyerUserId}/profile`}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-center space-x-3 hover:bg-[var(--border-subtle)] p-1.5 -ml-1.5 rounded-lg transition-colors group w-max"
     >
       {headshotUrl ? (
-        <img 
-          src={headshotUrl} 
-          alt={displayName} 
+        <img
+          src={headshotUrl}
+          alt={displayName}
           className="w-8 h-8 rounded-full bg-[var(--bg-base)] border border-[var(--border-subtle)] object-cover"
           referrerPolicy="no-referrer"
         />

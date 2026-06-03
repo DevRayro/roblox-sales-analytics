@@ -51,19 +51,19 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
     let totalRevenue = 0;
     let totalSales = filteredData.length;
     const uniqueBuyers = new Set<string>();
-    let minDate = new Date();
-    let maxDate = new Date(0);
+    let minDate: Date | null = null;
+    let maxDate: Date | null = null;
 
     filteredData.forEach(record => {
       totalRevenue += record.revenue;
       uniqueBuyers.add(record.buyerUserId);
       if (record.dateTime && !isNaN(record.dateTime.getTime())) {
-        if (record.dateTime < minDate) minDate = record.dateTime;
-        if (record.dateTime > maxDate) maxDate = record.dateTime;
+        if (minDate === null || record.dateTime < minDate) minDate = record.dateTime;
+        if (maxDate === null || record.dateTime > maxDate) maxDate = record.dateTime;
       }
     });
 
-    const days = Math.max(1, differenceInDays(maxDate, minDate));
+    const days = minDate && maxDate ? Math.max(1, differenceInDays(maxDate, minDate)) : 1;
 
     return {
       totalRevenue,
@@ -263,15 +263,15 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                        <XAxis 
-                          dataKey="date" 
+                        <XAxis
+                          dataKey="date"
                           tickFormatter={(val) => format(parseISO(val), 'MMM d')}
                           axisLine={false}
                           tickLine={false}
                           tick={{ fill: '#64748b', fontSize: 12 }}
                           dy={10}
                         />
-                        <YAxis 
+                        <YAxis
                           axisLine={false}
                           tickLine={false}
                           tick={{ fill: '#64748b', fontSize: 12 }}
@@ -279,13 +279,13 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                           width={80}
                         />
                         <Tooltip content={<CustomTooltip />} />
-                        <Area 
-                          type="monotone" 
-                          dataKey="revenue" 
-                          stroke="var(--primary-500)" 
+                        <Area
+                          type="monotone"
+                          dataKey="revenue"
+                          stroke="var(--primary-500)"
                           strokeWidth={3}
-                          fillOpacity={1} 
-                          fill="url(#colorRevenue)" 
+                          fillOpacity={1}
+                          fill="url(#colorRevenue)"
                           dot={{ r: 4, fill: 'var(--primary-500)', strokeWidth: 0 }}
                           activeDot={{ r: 6, fill: 'var(--primary-500)', strokeWidth: 0 }}
                         />
@@ -352,11 +352,11 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                       <BarChart data={topItems} layout="vertical" margin={{ top: 5, right: 30, left: 140, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border-subtle)" />
                         <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(val) => `R$${val}`} />
-                        <YAxis 
-                          dataKey="name" 
-                          type="category" 
-                          axisLine={false} 
-                          tickLine={false} 
+                        <YAxis
+                          dataKey="name"
+                          type="category"
+                          axisLine={false}
+                          tickLine={false}
                           width={130}
                           tick={(props: any) => {
                             const { x, y, payload } = props;
@@ -379,7 +379,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                             );
                           }}
                         />
-                        <Tooltip 
+                        <Tooltip
                           cursor={{ fill: 'var(--border-subtle)', opacity: 0.4 }}
                           contentStyle={{ backgroundColor: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border-subtle)', color: '#f8fafc', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                           itemStyle={{ color: 'var(--primary-400)' }}
@@ -405,7 +405,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                 </div>
               </div>
             </div>
-            
+
             {/* Recent Sales Table */}
             <div className="bg-[var(--bg-panel)] rounded-2xl md:rounded-3xl shadow-lg border border-[var(--border-subtle)] overflow-hidden">
               <div className="p-4 md:p-6 border-b border-[var(--border-subtle)] flex items-center justify-between bg-gradient-to-r from-[var(--bg-base)]/50 to-transparent">
@@ -439,7 +439,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                   <tbody className="text-sm text-slate-300">
                     <AnimatePresence initial={false}>
                       {recentSales.map((record, i) => (
-                        <motion.tr 
+                        <motion.tr
                           key={record.id}
                           layout
                           initial={{ opacity: 0, y: -20, backgroundColor: 'var(--primary-500)' }}
@@ -501,7 +501,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                 <h3 className="text-2xl font-bold text-white tracking-tight">Revenue by Location</h3>
                 <p className="text-slate-400 mt-1">Detailed breakdown of where your sales are originating.</p>
               </div>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 <div className="h-[400px]">
                   {salesByLocation.length > 0 ? (
@@ -522,7 +522,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip 
+                        <Tooltip
                           formatter={(value: number) => [`R$ ${value}`, 'Revenue']}
                           contentStyle={{ backgroundColor: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border-subtle)', color: '#f8fafc', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                           itemStyle={{ color: 'var(--primary-400)' }}
@@ -534,7 +534,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                     <div className="flex items-center justify-center h-full text-slate-500">No data available</div>
                   )}
                 </div>
-                
+
                 <div>
                   <h4 className="text-lg font-semibold text-white mb-4">Location Breakdown</h4>
                   <div className="space-y-3">
@@ -546,7 +546,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                         </div>
                         <div className="text-right">
                           <div className="text-primary-400 font-bold font-mono">R$ {loc.value.toLocaleString()}</div>
-                          <div className="text-xs text-slate-500">{((loc.value / stats.totalRevenue) * 100).toFixed(1)}% of total</div>
+                          <div className="text-xs text-slate-500">{stats.totalRevenue > 0 ? ((loc.value / stats.totalRevenue) * 100).toFixed(1) : '0.0'}% of total</div>
                         </div>
                       </div>
                     ))}
@@ -571,7 +571,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                 <h3 className="text-2xl font-bold text-white tracking-tight">Revenue Over Time</h3>
                 <p className="text-slate-400 mt-1">Detailed view of your daily revenue and sales volume.</p>
               </div>
-              
+
               <div className="h-[500px] w-full">
                 {revenueOverTime.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -583,15 +583,15 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                      <XAxis 
-                        dataKey="date" 
+                      <XAxis
+                        dataKey="date"
                         tickFormatter={(val) => format(parseISO(val), 'MMM d')}
                         axisLine={false}
                         tickLine={false}
                         tick={{ fill: '#64748b', fontSize: 13 }}
                         dy={15}
                       />
-                      <YAxis 
+                      <YAxis
                         axisLine={false}
                         tickLine={false}
                         tick={{ fill: '#64748b', fontSize: 13 }}
@@ -599,13 +599,13 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                         width={80}
                       />
                       <Tooltip content={<CustomTooltip />} />
-                      <Area 
-                        type="monotone" 
-                        dataKey="revenue" 
-                        stroke="var(--primary-500)" 
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="var(--primary-500)"
                         strokeWidth={4}
-                        fillOpacity={1} 
-                        fill="url(#colorRevenueTime)" 
+                        fillOpacity={1}
+                        fill="url(#colorRevenueTime)"
                         dot={{ r: 5, fill: 'var(--primary-500)', strokeWidth: 0 }}
                         activeDot={{ r: 8, fill: 'var(--primary-500)', strokeWidth: 0 }}
                       />

@@ -1,6 +1,7 @@
 export class ApiBatcher<T, R> {
   private queue: { id: T; resolve: (value: R | null) => void; reject: (reason?: any) => void }[] = [];
   private timeout: number | null = null;
+  private isProcessing = false;
   private batchSize: number;
   private delayMs: number;
   private fetchFn: (ids: T[]) => Promise<Record<string, R>>;
@@ -18,41 +19,51 @@ export class ApiBatcher<T, R> {
   async fetch(id: T): Promise<R | null> {
     return new Promise((resolve, reject) => {
       this.queue.push({ id, resolve, reject });
-      
-      if (!this.timeout) {
-        this.timeout = window.setTimeout(() => this.processQueue(), this.delayMs);
-      }
-      
-      if (this.queue.length >= this.batchSize) {
-        if (this.timeout) {
-          window.clearTimeout(this.timeout);
-          this.timeout = null;
-        }
-        this.processQueue();
-      }
+      this.scheduleProcessing(this.queue.length >= this.batchSize);
     });
   }
 
-  private async processQueue() {
-    this.timeout = null;
-    if (this.queue.length === 0) return;
+  private scheduleProcessing(immediate: boolean) {
+    // A batch is already running; it will pick up remaining items when it finishes.
+    if (this.isProcessing) return;
 
+    if (immediate) {
+      if (this.timeout) {
+        window.clearTimeout(this.timeout);
+        this.timeout = null;
+      }
+      this.processQueue();
+    } else if (!this.timeout) {
+      this.timeout = window.setTimeout(() => this.processQueue(), this.delayMs);
+    }
+  }
+
+  private async processQueue() {
+    if (this.timeout) {
+      window.clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+    if (this.isProcessing || this.queue.length === 0) return;
+
+    this.isProcessing = true;
     const currentBatch = this.queue.splice(0, this.batchSize);
     const ids = Array.from(new Set(currentBatch.map(item => item.id)));
 
     try {
       const results = await this.fetchFn(ids);
-      
+
       currentBatch.forEach(item => {
         const result = results[String(item.id)];
         item.resolve(result !== undefined ? result : null);
       });
     } catch (error) {
       currentBatch.forEach(item => item.reject(error));
+    } finally {
+      this.isProcessing = false;
     }
 
     if (this.queue.length > 0) {
-      this.timeout = window.setTimeout(() => this.processQueue(), this.delayMs);
+      this.scheduleProcessing(this.queue.length >= this.batchSize);
     }
   }
 }
