@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { SaleRecord } from '../types';
 import { format, parseISO } from 'date-fns';
+import Papa from 'papaparse';
 import { BuyerCell } from './BuyerCell';
 import { LocationCell } from './LocationCell';
-import { ArrowLeft, Search, Filter, ArrowUpDown } from 'lucide-react';
+import { AssetNameCell } from './AssetNameCell';
+import { ArrowLeft, Search, Filter, ArrowUpDown, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface AllSalesProps {
@@ -20,7 +22,7 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
-  
+
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,7 +57,7 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
     // Search
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
-      result = result.filter(d => 
+      result = result.filter(d =>
         (d.assetName && d.assetName.toLowerCase().includes(lowerSearch)) ||
         (d.buyerName && d.buyerName.toLowerCase().includes(lowerSearch)) ||
         (d.buyerUserId && d.buyerUserId.toString().includes(lowerSearch))
@@ -112,6 +114,30 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
     currentPage * itemsPerPage
   );
 
+  const handleExportCsv = () => {
+    const rows = filteredAndSortedData.map(d => ({
+      'Date and Time': d.dateTime && !isNaN(d.dateTime.getTime()) ? d.dateTime.toISOString() : '',
+      'Buyer Name': d.buyerName || '',
+      'Buyer User Id': d.buyerUserId || '',
+      'Asset Name': d.assetName || '',
+      'Asset Id': d.assetId && d.assetId !== 'Null' ? d.assetId : '',
+      'Asset Type': d.assetType || '',
+      'Location': d.location || '',
+      'Hold Status': d.holdStatus || '',
+      'Revenue': d.revenue ?? 0,
+    }));
+    const csv = Papa.unparse(rows);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `roblox-sales-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center space-x-3 md:space-x-4">
@@ -125,6 +151,15 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
         <span className="px-3 py-1 bg-[var(--border-subtle)] text-slate-300 rounded-full text-sm font-medium">
           {filteredAndSortedData.length} records
         </span>
+        <button
+          onClick={handleExportCsv}
+          disabled={filteredAndSortedData.length === 0}
+          className="ml-auto flex items-center space-x-2 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 px-3 md:px-4 py-2 rounded-xl transition-colors border border-primary-500/20 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Export current results to CSV"
+        >
+          <Download className="w-4 h-4" />
+          <span className="hidden sm:inline">Export CSV</span>
+        </button>
       </div>
 
       <div className="bg-[var(--bg-panel)] p-4 md:p-6 rounded-xl shadow-sm border border-[var(--border-subtle)] space-y-4">
@@ -132,7 +167,7 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input 
+            <input
               type="text"
               placeholder="Search asset or buyer..."
               value={searchTerm}
@@ -228,7 +263,7 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
             <tbody className="text-sm text-slate-300">
               <AnimatePresence initial={false}>
                 {paginatedData.map((record, i) => (
-                  <motion.tr 
+                  <motion.tr
                     key={record.id}
                     layout
                     initial={{ opacity: 0, y: -10 }}
@@ -242,13 +277,7 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
                       <BuyerCell record={record} />
                     </td>
                     <td className="p-4 font-medium text-slate-200">
-                      {record.assetId && record.assetId !== 'Null' ? (
-                        <a href={`https://www.roblox.com/catalog/${record.assetId}`} target="_blank" rel="noreferrer" className="hover:text-primary-400 hover:underline transition-colors">
-                          {record.assetName}
-                        </a>
-                      ) : (
-                        record.assetName
-                      )}
+                      <AssetNameCell record={record} data={data} />
                     </td>
                     <td className="p-4">
                       <span className="px-2 py-1 bg-[var(--border-subtle)] text-slate-300 rounded text-xs font-medium">{record.assetType}</span>
@@ -272,7 +301,7 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="p-4 border-t border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-base)]/50">
@@ -299,7 +328,7 @@ export function AllSales({ data, onBack, isLive }: AllSalesProps) {
                   } else {
                     pageNum = currentPage - 2 + i;
                   }
-                  
+
                   return (
                     <button
                       key={pageNum}

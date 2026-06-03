@@ -19,6 +19,8 @@ import { format, parseISO, startOfDay, differenceInDays, subDays } from 'date-fn
 import { DollarSign, ShoppingCart, Users, TrendingUp, RefreshCw, CalendarDays, ArrowRight, MapPin, Clock, LayoutDashboard } from 'lucide-react';
 import { BuyerCell } from './BuyerCell';
 import { LocationCell } from './LocationCell';
+import { AssetNameCell } from './AssetNameCell';
+import { ItemDetailModal } from './ItemDetailModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils';
 
@@ -35,6 +37,7 @@ const COLORS = ['var(--primary-500)', '#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e'
 export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLive }: DashboardProps) {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '6m' | '1y' | 'all'>('all');
   const [activeTab, setActiveTab] = useState<'overview' | 'location' | 'time'>('overview');
+  const [selectedItem, setSelectedItem] = useState<{ assetId: string; assetName: string; assetType?: string } | null>(null);
 
   const filteredData = useMemo(() => {
     if (timeRange === 'all') return data;
@@ -92,11 +95,11 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
   }, [filteredData]);
 
   const topItems = useMemo(() => {
-    const itemData: Record<string, { name: string; assetId: string; revenue: number; sales: number }> = {};
+    const itemData: Record<string, { name: string; assetId: string; assetType: string; revenue: number; sales: number }> = {};
     filteredData.forEach(record => {
       if (!record.assetName) return;
       if (!itemData[record.assetName]) {
-        itemData[record.assetName] = { name: record.assetName, assetId: record.assetId, revenue: 0, sales: 0 };
+        itemData[record.assetName] = { name: record.assetName, assetId: record.assetId, assetType: record.assetType, revenue: 0, sales: 0 };
       }
       itemData[record.assetName].revenue += record.revenue;
       itemData[record.assetName].sales += 1;
@@ -361,20 +364,24 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                           tick={(props: any) => {
                             const { x, y, payload } = props;
                             const item = topItems.find(i => i.name === payload.value);
-                            const isLink = item?.assetId && item.assetId !== 'Null';
+                            const label = payload.value.length > 15 ? payload.value.substring(0, 15) + '...' : payload.value;
                             return (
                               <g transform={`translate(${x},${y})`}>
-                                {isLink ? (
-                                  <a href={`https://www.roblox.com/catalog/${item.assetId}`} target="_blank" rel="noreferrer" className="hover:underline cursor-pointer">
-                                    <text x={0} y={0} dy={4} textAnchor="end" fill="#cbd5e1" fontSize={13} fontWeight={500} className="hover:fill-primary-400 transition-colors">
-                                      {payload.value.length > 15 ? payload.value.substring(0, 15) + '...' : payload.value}
-                                    </text>
-                                  </a>
-                                ) : (
-                                  <text x={0} y={0} dy={4} textAnchor="end" fill="#cbd5e1" fontSize={13} fontWeight={500}>
-                                    {payload.value.length > 15 ? payload.value.substring(0, 15) + '...' : payload.value}
-                                  </text>
-                                )}
+                                <text
+                                  x={0}
+                                  y={0}
+                                  dy={4}
+                                  textAnchor="end"
+                                  fill="#cbd5e1"
+                                  fontSize={13}
+                                  fontWeight={500}
+                                  className="hover:fill-primary-400 transition-colors cursor-pointer"
+                                  onClick={() => {
+                                    if (item) setSelectedItem({ assetId: item.assetId, assetName: item.name, assetType: item.assetType });
+                                  }}
+                                >
+                                  {label}
+                                </text>
                               </g>
                             );
                           }}
@@ -453,13 +460,7 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
                             <BuyerCell record={record} />
                           </td>
                           <td className="p-5 font-medium text-slate-200">
-                            {record.assetId && record.assetId !== 'Null' ? (
-                              <a href={`https://www.roblox.com/catalog/${record.assetId}`} target="_blank" rel="noreferrer" className="hover:text-primary-400 hover:underline transition-colors">
-                                {record.assetName}
-                              </a>
-                            ) : (
-                              record.assetName
-                            )}
+                            <AssetNameCell record={record} data={data} />
                           </td>
                           <td className="p-5">
                             <span className="px-3 py-1 bg-[var(--bg-base)] border border-[var(--border-subtle)] text-slate-300 rounded-lg text-xs font-medium">{record.assetType}</span>
@@ -619,6 +620,16 @@ export function Dashboard({ data, onRefresh, isRefreshing, onViewAllSales, isLiv
           </motion.div>
         )}
       </AnimatePresence>
+
+      {selectedItem && (
+        <ItemDetailModal
+          assetId={selectedItem.assetId}
+          assetName={selectedItem.assetName}
+          assetType={selectedItem.assetType}
+          data={data}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
     </div>
   );
 }
